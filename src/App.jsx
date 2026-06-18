@@ -22,6 +22,7 @@ import {
   ShieldCheck, 
   Eye, 
   EyeOff,
+  Search,
   History,
   Send,
   Sun,
@@ -452,8 +453,8 @@ export default function App() {
     setSelectedBgIdx(0);
     setSelectedCardIdx(0);
     
-    // Smoothly route to dreams history list
-    setCurrentTab('dreams');
+    // Directly launch chat view for the newly created character
+    handleOpenChat(newDream);
   };
 
   // Open Chat Room for specific character
@@ -919,26 +920,26 @@ export default function App() {
             {!activeChatCharacter && (
               <header className="sticky top-0 w-full h-14 px-4 flex justify-between items-center border-b border-soulom-headerBorder bg-soulom-headerBg backdrop-blur-md z-40">
                 <h2 
-                  onClick={() => setCurrentTab('plaza')}
+                  onClick={() => {
+                    if (currentTab === 'plaza' || currentTab === 'dreams') {
+                      setCurrentTab('plaza');
+                    }
+                  }}
                   className="font-serif text-xl font-semibold tracking-wider text-[#E5A995] cursor-pointer drop-shadow-sm select-none"
                 >
-                  Soulom
+                  {currentTab === 'plaza' || currentTab === 'dreams' ? 'Soulom' : (currentTab === 'tactile' ? '触觉中心' : '个人中心')}
                 </h2>
                 
-                {/* 顶部右侧控制区 */}
-                <div className="flex items-center gap-2">
-                  {/* 旧日梦境按钮 */}
+                {/* 顶部右侧控制区 - 精准清洗 */}
+                {(currentTab === 'plaza' || currentTab === 'dreams') ? (
                   <button 
-                    onClick={() => handleTabChange('dreams')}
-                    className="flex flex-col items-center justify-center h-10 px-3 rounded-xl bg-soulom-inputBg border border-soulom-border backdrop-blur-md hover:bg-soulom-panel active:scale-95 transition-all group shadow-sm"
+                    type="button"
+                    onClick={() => showToast("搜索功能正在梦境中重构...")}
+                    className="w-9 h-9 rounded-xl flex items-center justify-center hover:bg-white/5 active:scale-95 transition-all text-[#E5A995]/85 hover:text-[#E5A995]"
                   >
-                    <div className="relative w-5 h-4 flex items-center justify-center">
-                      <div className="absolute w-2.5 h-2.5 rounded-full border border-[#E5A995]/60 -left-0.5 bg-soulom-panel backdrop-blur-xs group-hover:scale-105 transition-transform"></div>
-                      <div className="absolute w-2.5 h-2.5 rounded-full border border-soulom-border -right-0.5 bg-soulom-panel backdrop-blur-xs group-hover:scale-105 transition-transform"></div>
-                    </div>
-                    <span className="text-[7px] text-soulom-muted mt-0.5 scale-90 tracking-widest font-light">旧日梦境</span>
+                    <Search className="w-4.5 h-4.5 stroke-[1.5]" />
                   </button>
-                </div>
+                ) : null}
               </header>
             )}
 
@@ -2845,6 +2846,9 @@ export default function App() {
         {/* ========================================================
             弹窗: 梦境捕获 (Dream Drawer - Bottom Drawer Layout)
             ======================================================== */}
+        {/* ========================================================
+            弹窗: 梦境捕获 (Dream Drawer - Bottom Drawer Layout)
+            ======================================================== */}
         {isDreamModalOpen && (
           <div className="absolute inset-0 bg-black/60 backdrop-blur-md z-50 flex flex-col justify-end transition-all duration-300 animate-fade-in">
             <div className="w-full max-w-md rounded-t-[32px] bg-[#140C22]/95 border-t border-white/10 backdrop-blur-2xl p-6 flex flex-col gap-4 animate-slide-up relative shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
@@ -2963,7 +2967,7 @@ export default function App() {
                     type="submit" 
                     className="flex-2 h-11 rounded-xl bg-[#E5A995] text-[#0B0713] font-semibold text-xs hover:bg-[#ebd0c7] transition-all shadow-[0_2px_12px_rgba(229,169,149,0.25)] active:scale-[0.98]"
                   >
-                    捕获梦境
+                    🌟 下一步：重塑梦境画布
                   </button>
                 </div>
               </form>
@@ -2974,270 +2978,242 @@ export default function App() {
         {/* ========================================================
             页面: 梦境画布重塑 (Canvas Page - 所见即所得视觉重塑)
             ======================================================== */}
-        {isCanvasPageOpen && (
-          <div className="absolute inset-0 bg-[#0B0713] z-50 flex flex-col animate-slide-left border border-soulom-border overflow-hidden">
-            {/* Header Bar */}
-            <div className="h-14 border-b border-white/5 flex items-center justify-between px-4 flex-shrink-0 bg-[#1E1135]/20">
-              <button 
-                type="button" 
-                onClick={() => {
-                  setIsCanvasPageOpen(false);
-                  setIsDreamModalOpen(true);
-                }}
-                className="w-9 h-9 rounded-full bg-white/5 flex items-center justify-center border border-white/5 text-white/70 active:scale-95 transition-all"
-              >
-                <ArrowLeft className="w-4 h-4" />
-              </button>
-              <h3 className="font-serif text-xs text-[#F8F9FA] font-medium tracking-widest">梦境画布重塑</h3>
-              <div className="w-9 h-9" />
-            </div>
+        {isCanvasPageOpen && (() => {
+          const avatarOptions = aiGeneratedAssets 
+            ? [{ url: aiGeneratedAssets.avatar, isAi: true, idx: 10 }, ...DEFAULT_AVATARS.map((url, idx) => ({ url, isAi: false, idx }))]
+            : DEFAULT_AVATARS.map((url, idx) => ({ url, isAi: false, idx }));
+          const bgOptions = aiGeneratedAssets 
+            ? [{ url: aiGeneratedAssets.background, isAi: true, idx: 10 }, ...DEFAULT_BACKGROUNDS.map((url, idx) => ({ url, isAi: false, idx }))]
+            : DEFAULT_BACKGROUNDS.map((url, idx) => ({ url, isAi: false, idx }));
+          const cardOptions = aiGeneratedAssets 
+            ? [{ url: aiGeneratedAssets.card, isAi: true, idx: 10 }, ...DEFAULT_CARDS.map((url, idx) => ({ url, isAi: false, idx }))]
+            : DEFAULT_CARDS.map((url, idx) => ({ url, isAi: false, idx }));
 
-            {/* 3D所见即所得卡片视效实时预览区 */}
-            <div className="px-4 py-4 flex justify-center items-center flex-shrink-0 bg-gradient-to-b from-[#1E1135]/30 to-[#0B0713]">
-              <div 
-                className="w-[180px] aspect-[3/4] rounded-2xl overflow-hidden relative shadow-[0_8px_30px_rgba(0,0,0,0.6)] border border-white/10 flex flex-col justify-end p-3.5"
-              >
-                {/* Background poster */}
-                <img 
-                  src={
-                    aiGeneratedAssets && selectedBgIdx === 10 
-                      ? aiGeneratedAssets.background 
-                      : DEFAULT_BACKGROUNDS[selectedBgIdx]
-                  } 
-                  className="absolute inset-0 w-full h-full object-cover transition-all duration-300"
-                  alt="preview-bg"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#0B0713]/90 via-transparent to-black/30"></div>
+          return (
+            <div className="absolute inset-0 bg-[#0B0713] z-50 flex flex-col justify-between overflow-hidden max-w-md mx-auto h-screen border border-soulom-border">
+              {/* Header Bar */}
+              <div className="h-14 border-b border-white/5 flex items-center justify-between px-4 flex-shrink-0 bg-[#1E1135]/20">
+                <button 
+                  type="button" 
+                  onClick={() => {
+                    setIsCanvasPageOpen(false);
+                    setIsDreamModalOpen(true);
+                  }}
+                  className="w-9 h-9 rounded-full bg-white/5 flex items-center justify-center border border-white/5 text-white/70 active:scale-95 transition-all"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                </button>
+                <h3 className="font-serif text-xs text-[#F8F9FA] font-medium tracking-widest">梦境画布重塑</h3>
+                <div className="w-9 h-9" />
+              </div>
+
+              {/* Scrollable Main Content */}
+              <div className="flex-1 overflow-y-auto pr-0.5 pb-6 space-y-6 scrollbar-none min-h-0 bg-[#0B0713]">
                 
-                {/* Top floating avatar & info */}
-                <div className="absolute top-2.5 left-2.5 right-2.5 flex items-center gap-2 z-10">
-                  <div className="w-8 h-8 rounded-full border border-[#E5A995]/50 overflow-hidden shadow-md">
+                {/* 3D所见即所得卡片视效实时预览区 */}
+                <div className="px-4 pt-4 flex justify-center items-center flex-shrink-0">
+                  <div 
+                    className="w-[170px] aspect-[3/4] rounded-2xl overflow-hidden relative shadow-[0_8px_30px_rgba(0,0,0,0.6)] border border-white/10 flex flex-col justify-end p-3"
+                  >
+                    {/* Background poster */}
                     <img 
                       src={
-                        aiGeneratedAssets && selectedAvatarIdx === 10 
-                          ? aiGeneratedAssets.avatar 
-                          : DEFAULT_AVATARS[selectedAvatarIdx]
+                        aiGeneratedAssets && selectedBgIdx === 10 
+                          ? aiGeneratedAssets.background 
+                          : DEFAULT_BACKGROUNDS[selectedBgIdx]
                       } 
-                      className="w-full h-full object-cover"
-                      alt="preview-avatar"
+                      className="absolute inset-0 w-full h-full object-cover transition-all duration-300"
+                      alt="preview-bg"
                     />
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-[10px] font-bold text-white tracking-wide font-serif leading-none">
-                      {dreamCharName || '梦境分身'}
-                    </span>
-                    <span className="text-[8px] text-[#E5A995] font-light mt-0.5 leading-none">
-                      {dreamModel === 'normal' ? '正常' : '尺度'} · {dreamCharAge ? `${dreamCharAge}岁` : '22岁'}
-                    </span>
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#0B0713]/90 via-transparent to-black/30"></div>
+                    
+                    {/* Top floating avatar & info */}
+                    <div className="absolute top-2 left-2 right-2 flex items-center gap-1.5 z-10">
+                      <div className="w-7 h-7 rounded-full border border-[#E5A995]/50 overflow-hidden shadow-md">
+                        <img 
+                          src={
+                            aiGeneratedAssets && selectedAvatarIdx === 10 
+                              ? aiGeneratedAssets.avatar 
+                              : DEFAULT_AVATARS[selectedAvatarIdx]
+                          } 
+                          className="w-full h-full object-cover"
+                          alt="preview-avatar"
+                        />
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-[9px] font-bold text-white tracking-wide font-serif leading-none">
+                          {dreamCharName || '梦境分身'}
+                        </span>
+                        <span className="text-[7px] text-[#E5A995] font-light mt-0.5 leading-none">
+                          {dreamModel === 'normal' ? '正常' : '尺度'} · {dreamCharAge ? `${dreamCharAge}岁` : '22岁'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Floating Character Card overlay */}
+                    <img 
+                      src={
+                        aiGeneratedAssets && selectedCardIdx === 10 
+                          ? aiGeneratedAssets.card 
+                          : DEFAULT_CARDS[selectedCardIdx]
+                      }
+                      className="absolute inset-0 w-full h-full object-cover mix-blend-screen opacity-20 pointer-events-none transition-all duration-300"
+                      alt="card-overlay"
+                    />
+
+                    {/* Bottom Content description preview */}
+                    <div className="z-10 mt-auto flex flex-col gap-0.5">
+                      <div className="text-[8px] text-[#E5A995] tracking-widest font-semibold flex items-center gap-0.5">
+                        <Sparkles className="w-2 h-2 animate-pulse" /> 梦境已捕获
+                      </div>
+                      <p className="text-[7.5px] text-white/60 line-clamp-2 leading-tight font-light font-sans">
+                        {dreamInput || '用一句话，写下你今晚想落入的梦境...'}
+                      </p>
+                    </div>
                   </div>
                 </div>
 
-                {/* Floating Character Card overlay */}
-                <img 
-                  src={
-                    aiGeneratedAssets && selectedCardIdx === 10 
-                      ? aiGeneratedAssets.card 
-                      : DEFAULT_CARDS[selectedCardIdx]
-                  }
-                  className="absolute inset-0 w-full h-full object-cover mix-blend-screen opacity-25 pointer-events-none transition-all duration-300"
-                  alt="card-overlay"
-                />
-
-                {/* Bottom Content description preview */}
-                <div className="z-10 mt-auto flex flex-col gap-1">
-                  <div className="text-[8px] text-[#E5A995] tracking-widest font-semibold flex items-center gap-1">
-                    <Sparkles className="w-2.5 h-2.5 animate-pulse" /> 梦境已捕获
+                {/* 三大视觉卡片区横滑 */}
+                {/* 1. 角色头像 */}
+                <div className="flex flex-col gap-2 px-4 flex-shrink-0">
+                  <span className="text-xs text-[#E5A995] font-serif tracking-wider font-semibold">角色头像</span>
+                  <div className="flex overflow-x-auto gap-3 pb-2 scrollbar-none">
+                    {avatarOptions.map((opt) => {
+                      const isSelected = selectedAvatarIdx === opt.idx;
+                      return (
+                        <div 
+                          key={opt.idx}
+                          onClick={() => setSelectedAvatarIdx(opt.idx)}
+                          className={`w-14 h-14 rounded-full overflow-hidden relative cursor-pointer flex-shrink-0 transition-all border-2 active:scale-95 ${
+                            isSelected 
+                              ? 'border-[#E5A995] shadow-[0_0_12px_rgba(229,169,149,0.5)] scale-105' 
+                              : 'border-white/10 hover:border-white/20'
+                          }`}
+                        >
+                          <img src={opt.url} className="w-full h-full object-cover" alt="avatar" />
+                          {opt.isAi && (
+                            <div className="absolute inset-0 bg-purple-900/30 flex items-center justify-center">
+                              <span className="bg-purple-600 text-white text-[7px] px-1 rounded-sm scale-75 font-semibold">AI</span>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
-                  <p className="text-[8px] text-white/60 line-clamp-2 leading-relaxed font-light font-sans">
-                    {dreamInput || '用一句话，写下你今晚想落入的梦境...'}
-                  </p>
                 </div>
-              </div>
-            </div>
 
-            {/* AI 专属定制 Header/Bar */}
-            <div className="px-4 py-2.5 bg-white/5 border-y border-white/5 flex items-center justify-between flex-shrink-0">
-              <div className="flex flex-col">
-                <span className="text-[10px] text-white/50">AI 专属定制画布</span>
-                <span className="text-[8px] text-[#E5A995]/80 font-light mt-0.5">消耗 Token 绘制高维精细美术</span>
-              </div>
-              <button
-                type="button"
-                onClick={handleTriggerAiDraw}
-                disabled={generationTokens <= 0 || isAiGenerating}
-                className={`h-8 px-3 rounded-lg flex items-center gap-1 text-[10px] font-semibold transition-all ${
-                  generationTokens > 0
-                    ? 'bg-gradient-to-r from-purple-600 via-pink-600 to-rose-500 text-white shadow-[0_0_10px_rgba(236,72,153,0.35)] hover:brightness-110 active:scale-95'
-                    : 'bg-white/5 text-white/20 border border-white/5 cursor-not-allowed'
-                }`}
-              >
-                <Sparkles className="w-3 h-3" />
-                <span>AI 专属绘制 ({generationTokens > 0 ? `剩余${generationTokens}次` : '已耗尽'})</span>
-              </button>
-            </div>
+                {/* 2. 全景背景 */}
+                <div className="flex flex-col gap-2 px-4 flex-shrink-0">
+                  <span className="text-xs text-[#E5A995] font-serif tracking-wider font-semibold">全景背景</span>
+                  <div className="flex overflow-x-auto gap-3 pb-2 scrollbar-none">
+                    {bgOptions.map((opt) => {
+                      const isSelected = selectedBgIdx === opt.idx;
+                      return (
+                        <div 
+                          key={opt.idx}
+                          onClick={() => setSelectedBgIdx(opt.idx)}
+                          className={`w-28 h-18 rounded-xl overflow-hidden relative cursor-pointer flex-shrink-0 transition-all border-2 active:scale-95 ${
+                            isSelected 
+                              ? 'border-[#E5A995] shadow-[0_0_12px_rgba(229,169,149,0.5)] scale-105' 
+                              : 'border-white/10 hover:border-white/20'
+                          }`}
+                        >
+                          <img src={opt.url} className="w-full h-full object-cover" alt="bg" />
+                          {opt.isAi && (
+                            <span className="absolute top-1.5 left-1.5 bg-purple-600 text-white text-[7px] px-1 rounded-sm scale-90 font-semibold origin-top-left">
+                              AI 专属
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
 
-            {/* Switcher Tabs */}
-            <div className="px-4 py-2.5 flex gap-2 border-b border-white/5 flex-shrink-0 bg-[#0B0713]">
-              {[
-                { id: 'avatar', name: '头像', icon: User },
-                { id: 'bg', name: '背景', icon: Image },
-                { id: 'card', name: '角色卡', icon: Sparkles }
-              ].map((tab) => {
-                const TabIcon = tab.icon;
-                const isActive = canvasActiveTab === tab.id;
-                return (
+                {/* 3. 专属角色卡 */}
+                <div className="flex flex-col gap-2 px-4 flex-shrink-0">
+                  <span className="text-xs text-[#E5A995] font-serif tracking-wider font-semibold">专属角色卡</span>
+                  <div className="flex overflow-x-auto gap-3 pb-2 scrollbar-none">
+                    {cardOptions.map((opt) => {
+                      const isSelected = selectedCardIdx === opt.idx;
+                      return (
+                        <div 
+                          key={opt.idx}
+                          onClick={() => setSelectedCardIdx(opt.idx)}
+                          className={`w-20 h-28 rounded-xl overflow-hidden relative cursor-pointer flex-shrink-0 transition-all border-2 active:scale-95 ${
+                            isSelected 
+                              ? 'border-[#E5A995] shadow-[0_0_12px_rgba(229,169,149,0.5)] scale-105' 
+                              : 'border-white/10 hover:border-white/20'
+                          }`}
+                        >
+                          <img src={opt.url} className="w-full h-full object-cover" alt="card" />
+                          {opt.isAi && (
+                            <span className="absolute top-1.5 left-1.5 bg-purple-600 text-white text-[7px] px-1 rounded-sm scale-90 font-semibold origin-top-left">
+                              AI 专属
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* AI 专属定制粒子按钮 */}
+                <div className="px-4 py-2">
                   <button
-                    key={tab.id}
                     type="button"
-                    onClick={() => setCanvasActiveTab(tab.id)}
-                    className={`flex-1 h-9 rounded-xl flex items-center justify-center gap-1.5 text-[11px] font-medium border transition-all ${
-                      isActive
-                        ? 'bg-[#E5A995]/10 border-[#E5A995]/60 text-[#E5A995]'
-                        : 'bg-white/5 border-transparent text-white/50 hover:text-white'
+                    disabled={generationTokens <= 0 || isAiGenerating}
+                    onClick={handleTriggerAiDraw}
+                    className={`w-full py-3.5 rounded-xl flex items-center justify-center gap-2 text-xs font-semibold tracking-wider transition-all border ${
+                      generationTokens > 0
+                        ? 'bg-gradient-to-r from-purple-700 via-pink-600 to-rose-500 text-white border-transparent shadow-[0_0_15px_rgba(236,72,153,0.35)] animate-[pulse-slow_2.5s_infinite] hover:brightness-110 active:scale-[0.98]'
+                        : 'bg-white/5 border-white/[0.06] text-white/30 cursor-not-allowed'
                     }`}
                   >
-                    <TabIcon className="w-3.5 h-3.5" />
-                    {tab.name}
+                    <Sparkles className="w-3.5 h-3.5 text-[#E5A995] animate-pulse" />
+                    <span>✨ 对默认不满意？根据梦境提示词智能生成 (限1次)</span>
                   </button>
-                );
-              })}
-            </div>
-
-            {/* Grid of Options */}
-            <div className="flex-1 overflow-y-auto p-4 bg-[#0B0713]/40 min-h-0">
-              {canvasActiveTab === 'avatar' && (
-                <div className="grid grid-cols-5 gap-2.5 pb-6">
-                  {(aiGeneratedAssets 
-                    ? [{ url: aiGeneratedAssets.avatar, isAi: true, idx: 10 }, ...DEFAULT_AVATARS.map((url, idx) => ({ url, isAi: false, idx }))]
-                    : DEFAULT_AVATARS.map((url, idx) => ({ url, isAi: false, idx }))
-                  ).map((opt) => {
-                    const isSelected = selectedAvatarIdx === opt.idx;
-                    return (
-                      <div 
-                        key={opt.idx}
-                        onClick={() => setSelectedAvatarIdx(opt.idx)}
-                        className={`aspect-square rounded-xl overflow-hidden relative cursor-pointer transition-all border-2 active:scale-95 ${
-                          isSelected 
-                            ? 'border-[#E5A995] shadow-[0_0_8px_rgba(229,169,149,0.5)] scale-105' 
-                            : 'border-white/10 hover:border-white/20'
-                        }`}
-                      >
-                        <img src={opt.url} className="w-full h-full object-cover" alt="avatar-option" />
-                        {opt.isAi && (
-                          <div className="absolute top-0.5 left-0.5 px-0.5 py-0.2 rounded bg-purple-600 text-[6px] text-white scale-[0.8] origin-top-left font-bold">
-                            AI
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
                 </div>
-              )}
 
-              {canvasActiveTab === 'bg' && (
-                <div className="grid grid-cols-2 gap-3 pb-6">
-                  {(aiGeneratedAssets 
-                    ? [{ url: aiGeneratedAssets.background, isAi: true, idx: 10 }, ...DEFAULT_BACKGROUNDS.map((url, idx) => ({ url, isAi: false, idx }))]
-                    : DEFAULT_BACKGROUNDS.map((url, idx) => ({ url, isAi: false, idx }))
-                  ).map((opt) => {
-                    const isSelected = selectedBgIdx === opt.idx;
-                    return (
-                      <div 
-                        key={opt.idx}
-                        onClick={() => setSelectedBgIdx(opt.idx)}
-                        className={`aspect-[3/2] rounded-xl overflow-hidden relative cursor-pointer transition-all border-2 active:scale-95 ${
-                          isSelected 
-                            ? 'border-[#E5A995] shadow-[0_0_8px_rgba(229,169,149,0.5)] scale-102' 
-                            : 'border-white/10 hover:border-white/20'
-                        }`}
-                      >
-                        <img src={opt.url} className="w-full h-full object-cover" alt="bg-option" />
-                        {opt.isAi && (
-                          <span className="absolute top-1.5 left-1.5 px-1 rounded bg-purple-600 text-[7px] text-white scale-90 origin-top-left font-semibold">
-                            AI 专属
-                          </span>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+              </div>
 
-              {canvasActiveTab === 'card' && (
-                <div className="grid grid-cols-2 gap-3 pb-6">
-                  {(aiGeneratedAssets 
-                    ? [{ url: aiGeneratedAssets.card, isAi: true, idx: 10 }, ...DEFAULT_CARDS.map((url, idx) => ({ url, isAi: false, idx }))]
-                    : DEFAULT_CARDS.map((url, idx) => ({ url, isAi: false, idx }))
-                  ).map((opt) => {
-                    const isSelected = selectedCardIdx === opt.idx;
-                    return (
-                      <div 
-                        key={opt.idx}
-                        onClick={() => setSelectedCardIdx(opt.idx)}
-                        className={`aspect-[3/4] rounded-xl overflow-hidden relative cursor-pointer transition-all border-2 active:scale-95 ${
-                          isSelected 
-                            ? 'border-[#E5A995] shadow-[0_0_8px_rgba(229,169,149,0.5)] scale-102' 
-                            : 'border-white/10 hover:border-white/20'
-                        }`}
-                      >
-                        <img src={opt.url} className="w-full h-full object-cover" alt="card-option" />
-                        {opt.isAi && (
-                          <span className="absolute top-1.5 left-1.5 px-1 rounded bg-purple-600 text-[7px] text-white scale-90 origin-top-left font-semibold">
-                            AI 专属
-                          </span>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
+              {/* Bottom Action Area */}
+              <div className="p-4 pb-6 border-t border-white/5 flex flex-col gap-3 flex-shrink-0 bg-[#0B0713]">
+                <button
+                  type="button"
+                  onClick={() => handleCreateDream()}
+                  className="w-full h-12 rounded-xl bg-gradient-to-r from-[#E5A995] to-[#E5A995]/80 text-[#0B0713] font-bold text-xs hover:brightness-105 active:scale-95 transition-all shadow-[0_4px_16px_rgba(229,169,149,0.25)] flex items-center justify-center gap-1.5"
+                >
+                  <span>确认生成，步入梦境 ▶</span>
+                </button>
+              </div>
 
-            {/* Bottom Action Area */}
-            <div className="p-4 border-t border-white/5 flex gap-3 flex-shrink-0 bg-[#0B0713]">
-              <button
-                type="button"
-                onClick={() => {
-                  setIsCanvasPageOpen(false);
-                  setIsDreamModalOpen(true);
-                }}
-                className="flex-1 h-11 rounded-xl bg-white/5 border border-white/10 text-xs text-white/70 hover:text-white transition-colors"
-              >
-                返回修改
-              </button>
-              <button
-                type="button"
-                onClick={() => handleCreateDream()}
-                className="flex-[2] h-11 rounded-xl bg-gradient-to-r from-[#E5A995] to-[#E5A995]/80 text-[#0B0713] font-semibold text-xs hover:brightness-105 active:scale-95 transition-all shadow-[0_2px_12px_rgba(229,169,149,0.3)] flex items-center justify-center gap-1.5"
-              >
-                <span>🦄 完成画卷，开启梦境</span>
-              </button>
-            </div>
-
-            {/* 3s七彩虹光加载遮罩 */}
-            {isAiGenerating && (
-              <div className="absolute inset-0 bg-black/85 backdrop-blur-md z-[60] flex flex-col justify-center items-center p-6 text-center animate-fade-in">
-                {/* Shimmering rainbow circular orb */}
-                <div className="relative w-20 h-20 rounded-full flex items-center justify-center mb-6">
-                  <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500 animate-spin blur-md opacity-75"></div>
-                  <div className="absolute inset-1 rounded-full bg-[#0B0713] flex items-center justify-center">
-                    <Sparkles className="w-8 h-8 text-[#E5A995] animate-pulse" />
+              {/* 全屏流光画布渲染加载遮罩 */}
+              {isAiGenerating && (
+                <div className="absolute inset-0 bg-black/90 z-[70] flex flex-col justify-center items-center p-6 text-center animate-fade-in">
+                  {/* Rainbow spinning circles */}
+                  <div className="relative w-24 h-24 mb-6">
+                    <div className="absolute inset-0 rounded-full bg-gradient-to-r from-red-500 via-yellow-500 via-green-500 via-blue-500 via-indigo-500 to-pink-500 animate-spin blur-[8px] opacity-80"></div>
+                    <div className="absolute inset-1 rounded-full bg-gradient-to-l from-indigo-500 via-purple-500 to-pink-500 animate-[spin_5s_linear_infinite] blur-md opacity-60"></div>
+                    <div className="absolute inset-2 rounded-full bg-[#0B0713] flex flex-col items-center justify-center border border-white/10 shadow-[0_0_20px_rgba(229,169,149,0.3)]">
+                      <Sparkles className="w-10 h-10 text-[#E5A995] animate-pulse" />
+                    </div>
+                  </div>
+                  <h4 className="text-sm font-serif font-semibold text-white tracking-widest mb-3 animate-pulse">
+                    🔮 全屏流光画布渲染中...
+                  </h4>
+                  <p className="text-[10px] text-soulom-muted max-w-[85%] leading-relaxed font-light">
+                    正在解析梦境画卷：「{dreamInput}」<br />
+                    召唤星尘引擎，绘制独一无二的专属浮雕立绘...
+                  </p>
+                  <div className="w-48 h-1 bg-white/5 rounded-full mt-6 overflow-hidden relative border border-white/5">
+                    <div className="absolute top-0 left-0 h-full bg-gradient-to-r from-purple-500 via-pink-500 to-rose-400 animate-[loading-bar_3s_linear_forwards]" style={{ width: '100%' }} />
                   </div>
                 </div>
-                <h4 className="text-xs font-serif text-white tracking-widest mb-2 animate-pulse">
-                  宇宙灵感捕捉中...
-                </h4>
-                <p className="text-[9px] text-soulom-muted max-w-[80%] leading-relaxed font-light">
-                  正在调用灵感引擎定制专属 3D 浮雕头像、全景背景与高透卡片...
-                </p>
-                {/* Progress bar */}
-                <div className="w-32 h-1 bg-white/10 rounded-full mt-4 overflow-hidden relative">
-                  <div className="absolute top-0 left-0 h-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 animate-[loading-bar_3s_linear_forwards]" style={{ width: '100%', animation: 'ripple-expand 3s linear infinite' }} />
-                </div>
-              </div>
-            )}
-          </div>
-        )}
+              )}
+            </div>
+          );
+        })()}
 
         {/* ========================================================
             隐私解锁遮罩 (Privacy Lock Overlay)
