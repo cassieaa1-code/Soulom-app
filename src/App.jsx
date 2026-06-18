@@ -28,7 +28,8 @@ import {
   Sun,
   Moon,
   Trash2,
-  Bluetooth
+  Bluetooth,
+  X
 } from 'lucide-react';
 
 // 10 Default Premium Art Options for Canvas Reshaping
@@ -230,6 +231,8 @@ export default function App() {
   const [showRechargeDrawer, setShowRechargeDrawer] = useState(false);
   const [showPaidConfirmModal, setShowPaidConfirmModal] = useState(false);
   const [hasUsedFreeDraw, setHasUsedFreeDraw] = useState(false);
+  const [isSearchExpanded, setIsSearchExpanded] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Chat Screen States
   const [activeChatCharacter, setActiveChatCharacter] = useState(null); // story object or null
@@ -362,6 +365,8 @@ export default function App() {
 
   // Tab Switcher with Security intercept
   const handleTabChange = (tab) => {
+    setIsSearchExpanded(false);
+    setSearchQuery('');
     if (isPrivacyLockOn && tab === 'mine') {
       setIsLockScreenVisible(true);
       setCurrentGesture([]);
@@ -954,27 +959,57 @@ export default function App() {
             {/* 顶部粘性导航栏 Sticky Header */}
             {!activeChatCharacter && (
               <header className="sticky top-0 w-full h-14 px-4 flex justify-between items-center border-b border-soulom-headerBorder bg-soulom-headerBg backdrop-blur-md z-40">
-                <h2 
-                  onClick={() => {
-                    if (currentTab === 'plaza' || currentTab === 'dreams') {
-                      setCurrentTab('plaza');
-                    }
-                  }}
-                  className="font-serif text-xl font-semibold tracking-wider text-[#E5A995] cursor-pointer drop-shadow-sm select-none"
-                >
-                  {currentTab === 'plaza' || currentTab === 'dreams' ? 'Soulom' : (currentTab === 'tactile' ? '触觉中心' : '个人中心')}
-                </h2>
-                
-                {/* 顶部右侧控制区 - 精准清洗 */}
-                {(currentTab === 'plaza' || currentTab === 'dreams') ? (
-                  <button 
-                    type="button"
-                    onClick={() => showToast("搜索功能正在梦境中重构...")}
-                    className="w-9 h-9 rounded-xl flex items-center justify-center hover:bg-white/5 active:scale-95 transition-all text-[#E5A995]/85 hover:text-[#E5A995]"
-                  >
-                    <Search className="w-4.5 h-4.5 stroke-[1.5]" />
-                  </button>
-                ) : null}
+                {isSearchExpanded && (currentTab === 'plaza' || currentTab === 'dreams') ? (
+                  <div className="flex-1 flex items-center h-9 relative animate-fade-in">
+                    <Search className="absolute left-3 w-4 h-4 text-soulom-muted stroke-[1.5]" />
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="搜索已捕获的梦境或剧本角色..."
+                      className="w-full h-full pl-9 pr-8 bg-white/5 border border-white/10 rounded-full text-xs text-white placeholder-gray-500 focus:outline-none focus:border-[#E5A995]/30 focus:bg-white/10 transition-all font-light"
+                      autoFocus
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsSearchExpanded(false);
+                        setSearchQuery('');
+                      }}
+                      className="absolute right-2.5 w-5 h-5 flex items-center justify-center rounded-full hover:bg-white/10 text-soulom-muted hover:text-white transition-colors"
+                    >
+                      <X className="w-3.5 h-3.5 stroke-[1.5]" />
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <h2 
+                      onClick={() => {
+                        if (currentTab === 'plaza' || currentTab === 'dreams') {
+                          setCurrentTab('plaza');
+                        }
+                      }}
+                      className={
+                        currentTab === 'plaza' || currentTab === 'dreams'
+                          ? "font-serif text-xl font-bold tracking-[0.2em] text-[#E5A995] cursor-pointer drop-shadow-sm select-none"
+                          : "font-serif text-xl font-semibold tracking-wider text-[#E5A995] cursor-pointer drop-shadow-sm select-none"
+                      }
+                    >
+                      {currentTab === 'plaza' || currentTab === 'dreams' ? 'SOULOM' : (currentTab === 'tactile' ? '触觉中心' : '个人中心')}
+                    </h2>
+                    
+                    {/* 顶部右侧控制区 - 精准清洗 */}
+                    {(currentTab === 'plaza' || currentTab === 'dreams') ? (
+                      <button 
+                        type="button"
+                        onClick={() => setIsSearchExpanded(true)}
+                        className="w-9 h-9 rounded-xl flex items-center justify-center hover:bg-white/5 active:scale-95 transition-all text-[#E5A995]/85 hover:text-[#E5A995]"
+                      >
+                        <Search className="w-4.5 h-4.5 stroke-[1.5]" />
+                      </button>
+                    ) : null}
+                  </>
+                )}
               </header>
             )}
 
@@ -1355,16 +1390,25 @@ export default function App() {
                     // Sort ALL timelines descending by last updated
                     allTimelines.sort((a, b) => b.lastUpdated - a.lastUpdated);
 
-                    if (allTimelines.length === 0) {
+                    const filteredTimelines = allTimelines.filter(t => 
+                      !searchQuery.trim() ||
+                      t.story.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                      t.story.character.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                      (t.lastMessage && t.lastMessage.text.toLowerCase().includes(searchQuery.toLowerCase()))
+                    );
+
+                    if (filteredTimelines.length === 0) {
                       return (
                         <div className="flex flex-col items-center justify-center py-20 text-center gap-3">
                           <History className="w-8 h-8 text-white/20" />
-                          <span className="text-xs text-soulom-muted font-light">暂无任何梦境故事记录</span>
+                          <span className="text-xs text-soulom-muted font-light">
+                            {searchQuery.trim() ? "未寻得相关历史梦境..." : "暂无任何梦境故事记录"}
+                          </span>
                         </div>
                       );
                     }
 
-                    return allTimelines.map((timeline) => {
+                    return filteredTimelines.map((timeline) => {
                       const lastMsgText = timeline.lastMessage 
                         ? (timeline.lastMessage.sender === 'user' ? '我：' : `${timeline.story.character}：`) + timeline.lastMessage.text 
                         : '无对话记录';
@@ -1436,70 +1480,88 @@ export default function App() {
               <div className="flex-1 flex flex-col justify-between overflow-hidden relative px-4 pt-3">
                 {/* 剧本卡片瀑布流 */}
                 <div className="flex-1 overflow-y-auto pb-20 pr-0.5 space-y-5 h-[calc(100vh-180px)]">
-                  {stories.map((story) => (
-                    <div 
-                      key={story.id} 
-                      onClick={() => setTimelineDrawerStory(story)}
-                      className="w-full aspect-[3/4] relative rounded-3xl overflow-hidden glass-panel group transition-transform duration-300 hover:scale-[0.99] cursor-pointer"
-                    >
-                      {/* 背景海报图片 */}
-                      <div className="w-full h-full relative">
-                        <img 
-                          src={story.cover} 
-                          alt={story.title} 
-                          className="w-full h-full object-cover feather-mask transition-transform duration-700 group-hover:scale-105"
-                          onError={(e) => {
-                            e.target.src = "https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?q=80&w=600&auto=format&fit=crop";
-                          }}
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-soulom-bg via-transparent to-transparent opacity-95"></div>
-                      </div>
-
-                      {/* 卡片左上角角色名小气泡 */}
-                      <div className="absolute top-4 left-4 py-1 px-3.5 rounded-full bg-black/40 backdrop-blur-md border border-[#E5A995]/20 text-[10px] tracking-wider text-[#E5A995] font-light">
-                        {story.character}
-                      </div>
-
-                      {/* 卡片底部文本 - 适配浅色模式，使用全局主题文字变量 */}
-                      <div className="absolute bottom-4 left-4 right-4 flex flex-col gap-1.5">
-                        <div className="flex items-baseline gap-2">
-                          <h3 className="font-serif text-lg text-soulom-text font-medium tracking-wide">
-                            {story.title}
-                          </h3>
-                          <span className="text-[9px] px-1.5 py-0.5 rounded-md bg-[#E5A995]/10 border border-[#E5A995]/25 text-[#E5A995] scale-90">
-                            {story.tag}
-                          </span>
+                  {(() => {
+                    const filteredStories = stories.filter(story => 
+                      !searchQuery.trim() || 
+                      story.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                      story.character.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                      story.desc.toLowerCase().includes(searchQuery.toLowerCase())
+                    );
+                    
+                    if (filteredStories.length === 0) {
+                      return (
+                        <div className="flex flex-col items-center justify-center py-20 text-center">
+                          <Search className="w-8 h-8 text-soulom-muted mb-3 opacity-30" />
+                          <p className="text-xs text-soulom-muted font-light">未寻得相关心动梦境...</p>
                         </div>
-                        <p className="text-[11px] text-soulom-muted line-clamp-2 leading-relaxed tracking-wide font-light">
-                          {story.desc}
-                        </p>
-                        
-                        {/* 互动动作 */}
-                        <div className="flex justify-between items-center mt-1 pt-2 border-t border-gray-500/20 text-[10px]">
-                          <span className="text-soulom-muted font-light">共鸣分身: {story.customTag}</span>
-                          <button 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setTimelineDrawerStory(story);
+                      );
+                    }
+                    
+                    return filteredStories.map((story) => (
+                      <div 
+                        key={story.id} 
+                        onClick={() => setTimelineDrawerStory(story)}
+                        className="w-full aspect-[3/4] relative rounded-3xl overflow-hidden glass-panel group transition-transform duration-300 hover:scale-[0.99] cursor-pointer"
+                      >
+                        {/* 背景海报图片 */}
+                        <div className="w-full h-full relative">
+                          <img 
+                            src={story.cover} 
+                            alt={story.title} 
+                            className="w-full h-full object-cover feather-mask transition-transform duration-700 group-hover:scale-105"
+                            onError={(e) => {
+                              e.target.src = "https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?q=80&w=600&auto=format&fit=crop";
                             }}
-                            className="text-[#E5A995] flex items-center gap-1 hover:underline active:scale-95 transition-transform"
-                          >
-                            <Sparkles className="w-3 h-3 text-[#E5A995]" /> 立即续写梦境
-                          </button>
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-soulom-bg via-transparent to-transparent opacity-95"></div>
+                        </div>
+
+                        {/* 卡片左上角角色名小气泡 */}
+                        <div className="absolute top-4 left-4 py-1 px-3.5 rounded-full bg-black/40 backdrop-blur-md border border-[#E5A995]/20 text-[10px] tracking-wider text-[#E5A995] font-light">
+                          {story.character}
+                        </div>
+
+                        {/* 卡片底部文本 - 适配浅色模式，使用全局主题文字变量 */}
+                        <div className="absolute bottom-4 left-4 right-4 flex flex-col gap-1.5">
+                          <div className="flex items-baseline gap-2">
+                            <h3 className="font-serif text-lg text-soulom-text font-medium tracking-wide">
+                              {story.title}
+                            </h3>
+                            <span className="text-[9px] px-1.5 py-0.5 rounded-md bg-[#E5A995]/10 border border-[#E5A995]/25 text-[#E5A995] scale-90">
+                              {story.tag}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-soulom-muted line-clamp-2 leading-relaxed tracking-wide font-light">
+                            {story.desc}
+                          </p>
+                          
+                          {/* 互动动作 */}
+                          <div className="flex justify-between items-center mt-1 pt-2 border-t border-gray-500/20 text-[10px]">
+                            <span className="text-soulom-muted font-light">共鸣分身: {story.customTag}</span>
+                            <button 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setTimelineDrawerStory(story);
+                              }}
+                              className="text-[#E5A995] flex items-center gap-1 hover:underline active:scale-95 transition-transform"
+                            >
+                              <Sparkles className="w-3 h-3 text-[#E5A995]" /> 立即续写梦境
+                            </button>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    ));
+                  })()}
                 </div>
 
                 {/* 底部悬浮操作栏 */}
                 <div className="absolute bottom-4 left-4 right-4 z-30">
                   <button 
                     onClick={() => setIsDreamModalOpen(true)}
-                    className="w-full h-12 flex items-center justify-center gap-2 glass-panel hover:glow-border rounded-full text-xs tracking-widest text-[#E5A995] hover:bg-soulom-panel active:scale-95 transition-all shadow-md"
+                    className="w-full h-12 flex items-center justify-center gap-2 rounded-full text-xs tracking-widest text-[#E5A995] bg-white/[0.02] border border-white/[0.08] hover:border-[#E5A995]/30 backdrop-blur-xl active:scale-95 transition-all shadow-[0_8px_32px_rgba(0,0,0,0.5)]"
                   >
-                    <Plus className="w-4 h-4 text-[#E5A995] animate-pulse-slow" /> 
-                    <span>捕 获 今 晚 的 心 动 梦 境</span>
+                    <Plus className="w-4 h-4 text-[#E5A995]" /> 
+                    <span>＋ 捕获今晚的心动梦境</span>
                   </button>
                 </div>
               </div>
