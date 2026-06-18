@@ -290,9 +290,7 @@ export default function App() {
   const [profileName, setProfileName] = useState("SOULOM DEV");
   const [profileBirthday, setProfileBirthday] = useState("06-17");
   const [profileAvatar, setProfileAvatar] = useState("/avatar.png");
-  const [isNotificationSettingsOpen, setIsNotificationSettingsOpen] = useState(false);
-  const [isDreamPushOn, setIsDreamPushOn] = useState(true);
-  const [isPrivateDisguiseOn, setIsPrivateDisguiseOn] = useState(false);
+  const [isDeactivateModalOpen, setIsDeactivateModalOpen] = useState(false);
   const [isPrivacyLockPageOpen, setIsPrivacyLockPageOpen] = useState(false);
   const [isBiometricEnabled, setIsBiometricEnabled] = useState(false);
   const [lockTriggerOption, setLockTriggerOption] = useState("immediate"); // 'immediate' | '1min' | '5min'
@@ -2240,6 +2238,7 @@ export default function App() {
                 {/* 4. 轻量化设置卡片组 */}
                 <div className="flex flex-col gap-2.5">
                   
+                  {/* // 待评估开发难度，若难度过高则一期安全剃除 */}
                   {/* 精简卡片 1: 隐私安全锁 */}
                   <div 
                     onClick={() => setIsPrivacyLockPageOpen(true)}
@@ -2257,24 +2256,7 @@ export default function App() {
                     <ChevronRight className="w-3.5 h-3.5 text-soulom-muted opacity-60" />
                   </div>
 
-                  {/* 恢复卡片 2: 通知提醒设置 */}
-                  <div 
-                    onClick={() => setIsNotificationSettingsOpen(true)}
-                    className="w-full h-12 px-4 rounded-xl bg-[#1F1635]/40 border border-white/[0.06] flex justify-between items-center hover:bg-white/5 transition-colors cursor-pointer"
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <div className="p-1.5 rounded-lg bg-white/5 text-soulom-muted">
-                        <Bell className="w-3.5 h-3.5" />
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="text-xs text-soulom-text font-medium">通知提醒设置</span>
-                        <span className="text-[11px] text-slate-400 font-light mt-0.5">管理梦境推送与私密伪装通知</span>
-                      </div>
-                    </div>
-                    <ChevronRight className="w-3.5 h-3.5 text-soulom-muted opacity-60" />
-                  </div>
-
-                  {/* 精简卡片 3: 物理清除梦境记忆 */}
+                  {/* 精简卡片 2: 物理清除梦境记忆 */}
                   <div 
                     onClick={() => {
                       setErasureStep(1);
@@ -2286,7 +2268,7 @@ export default function App() {
                       <div className="p-1.5 rounded-lg bg-red-950/20 text-red-400">
                         <Trash2 className="w-3.5 h-3.5" />
                       </div>
-                      <div className="flex flex-col">
+                      <div className="flex flex-col text-left">
                         <span className="text-xs text-soulom-text font-medium">物理清除梦境记忆</span>
                         <span className="text-[8px] text-red-400/60 font-light mt-0.5">一键永久物理抹除所有多轮聊天档</span>
                       </div>
@@ -2297,7 +2279,7 @@ export default function App() {
                 </div>
 
                 {/* 5. 退出与合规底栏 */}
-                <div className="flex flex-col gap-3.5">
+                <div className="flex flex-col gap-2">
                   {/* 退出当前账户 */}
                   <button 
                     onClick={() => {
@@ -2309,151 +2291,34 @@ export default function App() {
                     <LogOut className="w-3.5 h-3.5" /> 退出当前登录账户
                   </button>
 
+                  {/* 注销账号 */}
+                  <button
+                    type="button"
+                    onClick={() => setIsDeactivateModalOpen(true)}
+                    className="text-[10px] text-white/30 hover:text-white/50 font-light underline bg-transparent border-0 cursor-pointer mx-auto py-1 w-fit block transition-colors"
+                  >
+                    注销账号
+                  </button>
+
                   {/* 合规超细链接 */}
                   <div className="flex items-center justify-center gap-3 pb-[safe-area] text-[10px] font-thin text-white/30 select-none">
                     <button 
                       type="button" 
                       onClick={() => setComplianceDoc('userAgreement')}
-                      className="hover:text-white/60 transition-colors bg-transparent border-0 cursor-pointer text-[10px] font-thin"
+                      className="hover:text-white/60 transition-colors bg-transparent border-0 cursor-pointer text-[10px] font-thin opacity-20"
                     >
                       《用户协议》
                     </button>
-                    <span className="text-white/10 text-[9px]">|</span>
+                    <span className="text-white/10 text-[9px] opacity-20">|</span>
                     <button 
                       type="button" 
                       onClick={() => setComplianceDoc('privacyPolicy')}
-                      className="hover:text-white/60 transition-colors bg-transparent border-0 cursor-pointer text-[10px] font-thin"
+                      className="hover:text-white/60 transition-colors bg-transparent border-0 cursor-pointer text-[10px] font-thin opacity-20"
                     >
                       《隐私权政策》
                     </button>
-                    <span className="text-white/10 text-[9px]">|</span>
-                    <button 
-                      type="button" 
-                      onClick={() => setComplianceDoc('complianceGuide')}
-                      className="hover:text-white/60 transition-colors bg-transparent border-0 cursor-pointer text-[10px] font-thin"
-                    >
-                      《平台合规指引》
-                    </button>
                   </div>
                 </div>
-
-                {/* 🔔 通知提醒设置二级子页面 */}
-                {isNotificationSettingsOpen && (
-                  <div className="absolute inset-0 bg-[#0B0713]/95 backdrop-blur-xl z-[85] animate-slide-left flex flex-col p-4 select-none h-full overflow-hidden">
-                    
-                    {/* Header */}
-                    <div className="flex items-center justify-between pb-3 border-b border-white/5">
-                      <button 
-                        type="button"
-                        onClick={() => setIsNotificationSettingsOpen(false)}
-                        className="p-1.5 rounded-full bg-white/5 border border-white/10 text-soulom-muted hover:text-soulom-text active:scale-95 transition-all cursor-pointer flex items-center justify-center"
-                      >
-                        <ArrowLeft className="w-4 h-4 text-white/70" />
-                      </button>
-                      <h3 className="text-sm font-serif text-[#F8F9FA] font-medium tracking-wide">通知提醒设置</h3>
-                      <div className="w-7 h-7"></div>
-                    </div>
-
-                    {/* Content Area */}
-                    <div className="flex-1 flex flex-col gap-4 mt-4 overflow-y-auto scrollbar-none pb-4">
-                      
-                      {/* 核心组件 1: 梦境台词推送 */}
-                      <div className="w-full p-4 rounded-xl bg-[#1F1635]/40 border border-white/[0.06] flex justify-between items-center hover:bg-white/5 transition-colors">
-                        <div className="flex flex-col gap-0.5 max-w-[80%] text-left">
-                          <span className="text-xs text-soulom-text font-medium">允许角色发送梦境提醒</span>
-                          <span className="text-[10px] text-soulom-muted font-light leading-relaxed">
-                            允许 AI 角色在梦境深处向您发送呼吸与心跳的感应推送与日常提醒。
-                          </span>
-                        </div>
-                        <button 
-                          type="button"
-                          onClick={() => setIsDreamPushOn(!isDreamPushOn)}
-                          className={`w-10 h-5.5 rounded-full transition-colors relative flex items-center cursor-pointer flex-shrink-0 ${isDreamPushOn ? 'bg-[#E5A995]' : 'bg-white/10'}`}
-                        >
-                          <div className={`w-3.5 h-3.5 rounded-full transition-all absolute ${isDreamPushOn ? 'left-5.5 bg-white shadow-[0_0_6px_rgba(255,255,255,0.6)]' : 'left-1 bg-white/40'}`}></div>
-                        </button>
-                      </div>
-
-                      {/* 核心组件 2: 私密伪装通知模式 */}
-                      <div className="w-full p-4 rounded-xl bg-[#1F1635]/40 border border-white/[0.06] flex flex-col gap-3">
-                        <div className="flex justify-between items-center">
-                          <div className="flex flex-col gap-0.5 max-w-[80%] text-left">
-                            <span className="text-xs text-soulom-text font-medium">开启私密伪装通知</span>
-                            <span className="text-[10px] text-slate-400 font-light leading-relaxed">
-                              开启后，手机锁屏通知将自动伪装为系统或天气工具消息，彻底隐藏真实聊天文本。
-                            </span>
-                          </div>
-                          <button 
-                            type="button"
-                            onClick={() => {
-                              const nextVal = !isPrivateDisguiseOn;
-                              setIsPrivateDisguiseOn(nextVal);
-                              showToast(nextVal ? "已启用锁屏通知私密伪装" : "已恢复标准锁屏通知");
-                            }}
-                            className={`w-10 h-5.5 rounded-full transition-colors relative flex items-center cursor-pointer flex-shrink-0 ${isPrivateDisguiseOn ? 'bg-[#E5A995]' : 'bg-white/10'}`}
-                          >
-                            <div className={`w-3.5 h-3.5 rounded-full transition-all absolute ${isPrivateDisguiseOn ? 'left-5.5 bg-white shadow-[0_0_6px_rgba(255,255,255,0.6)]' : 'left-1 bg-white/40'}`}></div>
-                          </button>
-                        </div>
-
-                        {/* 动态对比效果滑出 */}
-                        <div className={`overflow-hidden transition-all duration-300 ease-in-out ${isPrivateDisguiseOn ? 'max-h-[300px] opacity-100 mt-2' : 'max-h-0 opacity-0'}`}>
-                          <div className="border-t border-white/5 pt-3 flex flex-col gap-3">
-                            <span className="text-[9px] text-[#E5A995]/80 tracking-widest font-serif text-left">AURA DISGUISE · 锁屏通知预览对比</span>
-                            
-                            <div className="flex flex-col gap-3">
-                              {/* 1. 标准模式 */}
-                              <div className="flex flex-col gap-1 text-left">
-                                <span className="text-[9px] text-white/30 pl-1">未开启伪装 (真实内容公开)</span>
-                                <div className="w-full p-2.5 rounded-xl bg-white/[0.02] border border-white/5 flex gap-2.5 items-center">
-                                  <div className="w-7 h-7 rounded-lg overflow-hidden bg-[#1F1635] flex items-center justify-center text-xs text-[#E5A995] font-serif border border-[#E5A995]/20 flex-shrink-0">
-                                    S
-                                  </div>
-                                  <div className="flex-1 flex flex-col gap-0.5 overflow-hidden">
-                                    <div className="flex justify-between items-center">
-                                      <span className="text-[10px] text-white/80 font-medium font-serif font-sans">林深</span>
-                                      <span className="text-[8px] text-white/20">现在</span>
-                                    </div>
-                                    <span className="text-[9px] text-white/50 truncate">“笨蛋，贴在我的胸口，能听到我的心跳吗？...”</span>
-                                  </div>
-                                </div>
-                              </div>
-
-                              {/* 2. 伪装模式 */}
-                              <div className="flex flex-col gap-1 text-left">
-                                <div className="flex justify-between items-center pr-1">
-                                  <span className="text-[9px] text-[#E5A995]/60 pl-1 font-medium">★ 开启伪装 (安全防窥保护)</span>
-                                  <span className="text-[8px] text-emerald-400 bg-emerald-950/20 border border-emerald-900/30 px-1.5 py-0.2 rounded-full font-sans">已就绪</span>
-                                </div>
-                                <div className="w-full p-2.5 rounded-xl bg-gradient-to-r from-emerald-950/10 to-[#1F1635]/30 border border-emerald-500/20 flex gap-2.5 items-center shadow-[0_4px_12px_rgba(16,185,129,0.05)]">
-                                  <div className="w-7 h-7 rounded-lg overflow-hidden bg-sky-950/20 flex items-center justify-center text-xs text-sky-400 border border-sky-500/20 flex-shrink-0">
-                                    ☁️
-                                  </div>
-                                  <div className="flex-1 flex flex-col gap-0.5 overflow-hidden">
-                                    <div className="flex justify-between items-center">
-                                      <span className="text-[10px] text-sky-400 font-medium font-sans">系统天气</span>
-                                      <span className="text-[8px] text-white/20 font-sans">现在</span>
-                                    </div>
-                                    <span className="text-[9px] text-slate-300 truncate font-light">“今日气温下降2℃，湿度75%，请注意添衣防寒。”</span>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-
-                          </div>
-                        </div>
-
-                      </div>
-
-                    </div>
-
-                    {/* Footer Safety Notice */}
-                    <div className="pt-2.5 border-t border-white/5 text-center mt-auto flex-shrink-0">
-                      <span className="text-[9px] text-white/20 font-light">🔒 零本地日志残留，全通道匿名加密防窥</span>
-                    </div>
-
-                  </div>
-                )}
 
                 {/* 🔒 隐私安全锁二级设置页面 */}
                 {isPrivacyLockPageOpen && (
@@ -3654,6 +3519,53 @@ export default function App() {
                   </div>
                 </>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* 注销账号双重确认弹窗 */}
+        {isDeactivateModalOpen && (
+          <div className="absolute inset-0 bg-[#0B0713]/90 backdrop-blur-md z-[80] flex flex-col justify-center p-6 animate-fade-in">
+            <div className="w-full bg-[#1F1635]/95 border border-red-500/20 rounded-3xl p-5 shadow-[0_8px_32px_rgba(239,68,68,0.1)] flex flex-col gap-4 text-center">
+              <div className="w-12 h-12 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto">
+                <Trash2 className="w-5 h-5 text-red-400 animate-bounce" />
+              </div>
+              <h3 className="text-base text-red-400 font-serif">⚠️ 注销账号物理警告</h3>
+              <p className="text-xs text-soulom-muted font-light leading-relaxed">
+                注销后您的所有数字资产与触感羁绊将永久物理粉碎，是否确认？
+              </p>
+              <div className="flex flex-col gap-2.5 mt-2">
+                <button 
+                  type="button" 
+                  onClick={() => {
+                    // Reset everything
+                    setChatMessages(INITIAL_CHAT_MESSAGES);
+                    setStories(INITIAL_STORIES);
+                    setProfileName("SOULOM DEV");
+                    setProfileBirthday("06-17");
+                    setProfileAvatar("/avatar.png");
+                    setStarStones(0);
+                    setIsPrivacyLockOn(false);
+                    setIsBiometricEnabled(false);
+                    setNumericPasscode("1234");
+                    setIsResonating(false);
+                    setIsLoggedIn(false);
+                    setCurrentTab('plaza');
+                    setIsDeactivateModalOpen(false);
+                    showToast("账号已注销，所有数据已物理粉碎");
+                  }}
+                  className="w-full h-11 bg-red-600/80 hover:bg-red-600 text-white text-xs font-semibold rounded-xl cursor-pointer active:scale-95 transition-all shadow-[0_0_12px_rgba(239,68,68,0.4)]"
+                >
+                  🔥 确认物理粉碎并注销
+                </button>
+                <button 
+                  type="button" 
+                  onClick={() => setIsDeactivateModalOpen(false)}
+                  className="w-full h-11 bg-white/5 hover:bg-white/10 text-soulom-text text-xs rounded-xl cursor-pointer"
+                >
+                  取消，保留账号
+                </button>
+              </div>
             </div>
           </div>
         )}
