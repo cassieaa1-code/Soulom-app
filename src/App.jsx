@@ -226,6 +226,10 @@ export default function App() {
   const [generationTokens, setGenerationTokens] = useState(1);
   const [isAiGenerating, setIsAiGenerating] = useState(false);
   const [aiGeneratedAssets, setAiGeneratedAssets] = useState(null);
+  const [starStones, setStarStones] = useState(0); 
+  const [showRechargeDrawer, setShowRechargeDrawer] = useState(false);
+  const [showPaidConfirmModal, setShowPaidConfirmModal] = useState(false);
+  const [hasUsedFreeDraw, setHasUsedFreeDraw] = useState(false);
 
   // Chat Screen States
   const [activeChatCharacter, setActiveChatCharacter] = useState(null); // story object or null
@@ -380,7 +384,7 @@ export default function App() {
     setCurrentTab('plaza');
   };
 
-  // AI Draw Trigger
+  // AI Draw Trigger (Free first time)
   const handleTriggerAiDraw = () => {
     if (generationTokens <= 0) return;
     setIsAiGenerating(true);
@@ -395,8 +399,39 @@ export default function App() {
       setSelectedBgIdx(10);
       setSelectedCardIdx(10);
       setIsAiGenerating(false);
-      showToast("✨ AI 专属梦境画卷重塑成功！已自动应用");
+      setHasUsedFreeDraw(true);
+      showToast("✨ 专属梦境画卷已重塑！已自动套用预览");
     }, 3000);
+  };
+
+  // AI Redraw Trigger (Paid 10 Star Stones)
+  const handleTriggerPaidAiDraw = () => {
+    if (starStones < 10) return;
+    setIsAiGenerating(true);
+    setTimeout(() => {
+      setStarStones(prev => Math.max(0, prev - 10));
+      // Generate slightly different URLs to prove it refreshed!
+      setAiGeneratedAssets({
+        avatar: "https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?q=80&w=150&auto=format&fit=crop",
+        background: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=300&auto=format&fit=crop",
+        card: "https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=300&auto=format&fit=crop"
+      });
+      setSelectedAvatarIdx(10);
+      setSelectedBgIdx(10);
+      setSelectedCardIdx(10);
+      setIsAiGenerating(false);
+      showToast("🔮 已消耗 10 梦境星石重塑画布！已自动应用");
+    }, 3000);
+  };
+
+  // Recharge simulation handler
+  const handleTriggerRecharge = (amount) => {
+    showToast("💳 微信支付/支付宝安全链接唤醒中...");
+    setTimeout(() => {
+      setStarStones(prev => prev + amount);
+      setShowRechargeDrawer(false);
+      showToast(`✨ 补给成功！已存入 ${amount} 梦境星石`);
+    }, 1500);
   };
 
   // Dream input Modal submission
@@ -3158,21 +3193,35 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* AI 专属定制粒子按钮 */}
+                {/* AI 专属定制粒子按钮 - 免费与付费流转 */}
                 <div className="px-4 py-2">
-                  <button
-                    type="button"
-                    disabled={generationTokens <= 0 || isAiGenerating}
-                    onClick={handleTriggerAiDraw}
-                    className={`w-full py-3.5 rounded-xl flex items-center justify-center gap-2 text-xs font-semibold tracking-wider transition-all border ${
-                      generationTokens > 0
-                        ? 'bg-gradient-to-r from-purple-700 via-pink-600 to-rose-500 text-white border-transparent shadow-[0_0_15px_rgba(236,72,153,0.35)] animate-[pulse-slow_2.5s_infinite] hover:brightness-110 active:scale-[0.98]'
-                        : 'bg-white/5 border-white/[0.06] text-white/30 cursor-not-allowed'
-                    }`}
-                  >
-                    <Sparkles className="w-3.5 h-3.5 text-[#E5A995] animate-pulse" />
-                    <span>✨ 对默认不满意？根据梦境提示词智能生成 (限1次)</span>
-                  </button>
+                  {!hasUsedFreeDraw ? (
+                    <button
+                      type="button"
+                      disabled={isAiGenerating}
+                      onClick={handleTriggerAiDraw}
+                      className="w-full py-3.5 rounded-xl flex items-center justify-center gap-2 text-xs font-semibold tracking-wider transition-all border bg-gradient-to-r from-purple-700 via-pink-600 to-rose-500 text-white border-transparent shadow-[0_0_15px_rgba(236,72,153,0.35)] animate-[pulse-slow_2.5s_infinite] hover:brightness-110 active:scale-[0.98]"
+                    >
+                      <Sparkles className="w-3.5 h-3.5 text-[#E5A995] animate-pulse" />
+                      <span>✨ 依据梦境提示词智能生成 (免费1次)</span>
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      disabled={isAiGenerating}
+                      onClick={() => {
+                        if (starStones >= 10) {
+                          setShowPaidConfirmModal(true);
+                        } else {
+                          setShowRechargeDrawer(true);
+                        }
+                      }}
+                      className="w-full py-3.5 rounded-xl flex items-center justify-center gap-2 text-xs font-semibold tracking-wider transition-all border bg-gradient-to-r from-[#20103A] to-[#120724] text-[#E5A995] border-[#8B5CF6]/50 shadow-[0_0_15px_rgba(139,92,246,0.3)] hover:brightness-110 active:scale-[0.98] animate-[pulse-slow_3s_infinite]"
+                    >
+                      <Sparkles className="w-3.5 h-3.5 text-purple-400 animate-pulse" />
+                      <span>🔮 依然不满意？消耗 10 梦境星石重新生成</span>
+                    </button>
+                  )}
                 </div>
 
               </div>
@@ -3210,6 +3259,101 @@ export default function App() {
                     <div className="absolute top-0 left-0 h-full bg-gradient-to-r from-purple-500 via-pink-500 to-rose-400 animate-[loading-bar_3s_linear_forwards]" style={{ width: '100%' }} />
                   </div>
                 </div>
+              )}
+
+              {/* 二次确认弹窗 */}
+              {showPaidConfirmModal && (
+                <div className="absolute inset-0 bg-black/70 backdrop-blur-sm z-[80] flex items-center justify-center p-6 animate-fade-in">
+                  <div className="w-full max-w-xs rounded-2xl glass-panel-heavy p-5 flex flex-col gap-4 relative animate-scale-up border border-soulom-border text-center">
+                    <h3 className="font-serif text-xs text-[#E5A995] font-semibold tracking-wider">重塑画布确认</h3>
+                    <p className="text-[11px] text-soulom-muted leading-relaxed font-light">
+                      是否确认消耗 10 星石重塑画布？
+                    </p>
+                    <div className="flex gap-2.5 mt-2">
+                      <button
+                        type="button"
+                        onClick={() => setShowPaidConfirmModal(false)}
+                        className="flex-1 h-9 rounded-xl bg-white/5 border border-white/10 text-[10px] text-soulom-muted transition-colors"
+                      >
+                        取消
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowPaidConfirmModal(false);
+                          handleTriggerPaidAiDraw();
+                        }}
+                        className="flex-1 h-9 rounded-xl bg-[#E5A995] text-[#0B0713] text-[10px] font-semibold transition-all hover:bg-[#ebd0c7]"
+                      >
+                        确认消耗
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* 星石共鸣补给站 充值抽屉 (BottomSheet) */}
+              {showRechargeDrawer && (
+                <>
+                  <div 
+                    onClick={() => setShowRechargeDrawer(false)}
+                    className="absolute inset-0 bg-black/75 backdrop-blur-xs z-[80] animate-fade-in"
+                  />
+                  <div className="absolute bottom-0 left-0 right-0 w-full max-w-md mx-auto rounded-t-[32px] bg-[#140C22]/98 border-t border-white/10 backdrop-blur-2xl p-6 flex flex-col gap-4 animate-slide-up z-[90] shadow-[0_-10px_40px_rgba(0,0,0,0.6)]">
+                    <div className="w-12 h-1.5 rounded-full bg-white/20 mx-auto mb-1 flex-shrink-0" />
+                    
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs font-semibold text-[#E5A995] tracking-widest flex items-center gap-1.5">
+                        <Sparkles className="w-3.5 h-3.5" /> 星石共鸣补给站
+                      </span>
+                      <span className="text-[9px] text-soulom-muted font-light">
+                        当前星石余额: <span className="text-[#E5A995] font-semibold">{starStones}</span>
+                      </span>
+                    </div>
+                    
+                    <p className="text-[10px] text-soulom-muted leading-relaxed font-light mb-1">
+                      您的星石余额不足以重塑画布，请选择充值档位进行共鸣补给：
+                    </p>
+                    
+                    <div className="flex flex-col gap-2.5">
+                      {[
+                        { stones: 60, price: 6, label: "60 梦境星石" },
+                        { stones: 300, price: 30, label: "300 梦境星石", badge: "超值推荐" },
+                        { stones: 680, price: 68, label: "680 梦境星石", badge: "心动首选" }
+                      ].map((tier, idx) => (
+                        <div 
+                          key={idx}
+                          onClick={() => handleTriggerRecharge(tier.stones)}
+                          className="w-full h-[58px] rounded-xl bg-white/5 border border-white/[0.05] hover:border-[#E5A995]/30 flex items-center justify-between px-4 cursor-pointer transition-all active:scale-[0.99] hover:bg-white/10 group relative overflow-hidden"
+                        >
+                          <div className="flex flex-col justify-center text-left">
+                            <span className="text-xs font-serif font-semibold text-[#E5A995] tracking-wide">{tier.label}</span>
+                            <span className="text-[8px] text-white/35 font-light mt-0.5">解锁更多专属立绘</span>
+                          </div>
+                          
+                          <div className="flex items-center gap-2">
+                            {tier.badge && (
+                              <span className="px-1.5 py-0.5 rounded bg-[#E5A995]/15 border border-[#E5A995]/30 text-[#E5A995] text-[7px] scale-90">
+                                {tier.badge}
+                              </span>
+                            )}
+                            <span className="text-xs font-bold text-[#E5A995] font-serif group-hover:scale-105 transition-transform">
+                              ¥{tier.price}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    
+                    <button
+                      type="button"
+                      onClick={() => setShowRechargeDrawer(false)}
+                      className="w-full h-11 rounded-xl bg-white/5 border border-white/5 text-xs text-soulom-muted hover:text-soulom-text transition-colors mt-2"
+                    >
+                      放弃充值
+                    </button>
+                  </div>
+                </>
               )}
             </div>
           );
