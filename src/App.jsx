@@ -442,7 +442,7 @@ export default function App() {
     const newDreamId = Date.now();
     const name = dreamCharName.trim() || "梦境分身";
     const age = dreamCharAge.trim() ? `${dreamCharAge.trim()}岁` : "22岁";
-    const modelTag = dreamModel === 'normal' ? '正常聊天' : '大尺度';
+    const modelTag = dreamModel === 'normal' ? '浅层梦境' : '深层梦境';
     const customTagText = `${modelTag} · ${age}`;
 
     // Resolve customized visual assets (if index is 10, use AI asset)
@@ -2966,7 +2966,7 @@ export default function App() {
                       }`}
                     >
                       <div className={`w-1.5 h-1.5 rounded-full ${dreamModel === 'normal' ? 'bg-[#E5A995]' : 'bg-transparent border border-white/30'}`} />
-                      正常聊天版本
+                      浅层梦境
                     </button>
                     <button
                       type="button"
@@ -2978,7 +2978,7 @@ export default function App() {
                       }`}
                     >
                       <div className={`w-1.5 h-1.5 rounded-full ${dreamModel === 'unrated' ? 'bg-rose-400' : 'bg-transparent border border-white/30'}`} />
-                      大尺度版本
+                      深层梦境
                     </button>
                   </div>
                 </div>
